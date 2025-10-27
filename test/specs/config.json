@@ -3,7 +3,7 @@
   "coordenadaBaseLon": "-77.016",
   "updatedAt": "2025-09-29T14:44:14.896Z",
   "server": "10.23.100.17",
-  "database": "PE_WINET_CRM",
+  "database": "PE_WINET_CRM_JC",
   "user": "sa",
   "password": "0pticalN.qa+",
   "options": {

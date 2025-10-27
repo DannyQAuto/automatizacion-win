@@ -686,71 +686,90 @@ constructor(page: Page) {
 
     // 3. SELECCIONAR OPERADOR ACTUAL ALEATORIO
     async seleccionarOperadorActualAleatorio(): Promise<string> {
-        console.log('📱 Seleccionando operador actual aleatorio...');
+    console.log('📱 Seleccionando operador actual aleatorio...');
 
-        try {
-            // Esperar y hacer clic en el select
-            await this.selectOperadorActual.waitFor({ state: 'visible', timeout: 10000 });
-            await this.selectOperadorActual.click();
-            console.log('✅ Select "Operador actual" abierto');
+    try {
+        // Esperar y hacer clic en el select
+        await this.selectOperadorActual.waitFor({ state: 'visible', timeout: 10000 });
+        await this.selectOperadorActual.click();
+        console.log('✅ Select "Operador actual" abierto');
 
-            // Esperar a que el dropdown esté visible
-            const dropdown = this.page.locator('.select2-dropdown:not([style*="display: none"])');
-            await dropdown.waitFor({ state: 'visible', timeout: 5000 });
+        // Esperar a que el dropdown esté visible
+        const dropdown = this.page.locator('.select2-dropdown:not([style*="display: none"])');
+        await dropdown.waitFor({ state: 'visible', timeout: 5000 });
 
-            // Obtener todas las opciones del dropdown visible
-            const options = await dropdown.locator('li.select2-results__option').all();
+        // Obtener todas las opciones del dropdown visible
+        const options = await dropdown.locator('li.select2-results__option').all();
 
-            if (options.length === 0) {
-                throw new Error('No se encontraron opciones en el dropdown');
-            }
-
-            // Filtrar solo opciones válidas
-            const validOptions = [];
-            for (let i = 0; i < options.length; i++) {
-                const option = options[i];
-                const text = await option.textContent();
-                if (text && text.trim() !== '' && text !== 'Seleccione operador') {
-                    validOptions.push(option);
-                }
-            }
-
-            if (validOptions.length === 0) {
-                throw new Error('No hay opciones válidas para seleccionar');
-            }
-
-            // Seleccionar una opción aleatoria
-            const randomIndex = Math.floor(Math.random() * validOptions.length);
-            const selectedOption = validOptions[randomIndex];
-
-            const text = await selectedOption.textContent() || '';
-
-            // Hacer clic en la opción seleccionada
-            await selectedOption.click();
-            console.log(`✅ Operador actual seleccionado: ${text.trim()}`);
-
-            return text.trim();
-
-        } catch (error) {
-            console.log('❌ Error seleccionando operador actual:', error.message);
-
-            // Método alternativo similar al de "Cómo se enteró"
-            const selectReal = this.page.locator('select[name="seleccion_operador_actual"]');
-            if (await selectReal.count() > 0) {
-                const options = await selectReal.locator('option[value]:not([value=""])').all();
-                if (options.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * options.length);
-                    const selectedOption = options[randomIndex];
-                    const text = await selectedOption.textContent() || '';
-                    await selectReal.selectOption({ value: await selectedOption.getAttribute('value') });
-                    console.log(`✅ Operador seleccionado (alternativo): ${text.trim()}`);
-                    return text.trim();
-                }
-            }
-
-            return 'Operador no seleccionado';
+        if (options.length === 0) {
+            throw new Error('No se encontraron opciones en el dropdown');
         }
+
+        // Filtrar opciones válidas excluyendo "OTROS" y otras no deseadas
+        const validOptions = [];
+        const excludedOptions = ['OTROS', 'Seleccione operador', ''];
+
+        for (let i = 0; i < options.length; i++) {
+            const option = options[i];
+            const text = await option.textContent();
+            const trimmedText = text ? text.trim() : '';
+
+            // Solo incluir opciones que NO estén en la lista de excluidas
+            if (trimmedText !== '' && !excludedOptions.includes(trimmedText)) {
+                validOptions.push(option);
+            }
+        }
+
+        if (validOptions.length === 0) {
+            throw new Error('No hay opciones válidas para seleccionar (todas están excluidas)');
+        }
+
+        // Seleccionar una opción aleatoria
+        const randomIndex = Math.floor(Math.random() * validOptions.length);
+        const selectedOption = validOptions[randomIndex];
+
+        const text = await selectedOption.textContent() || '';
+
+        // Hacer clic en la opción seleccionada
+        await selectedOption.click();
+        console.log(`✅ Operador actual seleccionado: ${text.trim()}`);
+
+        return text.trim();
+
+    } catch (error) {
+        console.log('❌ Error seleccionando operador actual:', error.message);
+
+        // Método alternativo similar al de "Cómo se enteró"
+        const selectReal = this.page.locator('select[name="seleccion_operador_actual"]');
+        if (await selectReal.count() > 0) {
+            const options = await selectReal.locator('option[value]:not([value=""])').all();
+
+            // Filtrar también en el método alternativo
+            const validAltOptions = [];
+            const excludedOptions = ['OTROS', 'Seleccione operador', ''];
+
+            for (const option of options) {
+                const text = await option.textContent() || '';
+                const trimmedText = text.trim();
+
+                if (!excludedOptions.includes(trimmedText)) {
+                    validAltOptions.push(option);
+                }
+            }
+
+            if (validAltOptions.length > 0) {
+                const randomIndex = Math.floor(Math.random() * validAltOptions.length);
+                const selectedOption = validAltOptions[randomIndex];
+                const text = await selectedOption.textContent() || '';
+                await selectReal.selectOption({ value: await selectedOption.getAttribute('value') });
+                console.log(`✅ Operador seleccionado (alternativo): ${text.trim()}`);
+                return text.trim();
+            }
+        }
+
+        return 'Operador no seleccionado';
     }
+}
 
     // 4. ESCRIBIR OBSERVACIONES DE VENTA
     async escribirObservacionesVenta(): Promise<void> {

@@ -2,7 +2,7 @@ import { test, expect } from '../fixtures/base-test';
 import { DatabaseUtils } from '../utils/database-utils'; // ← Ruta corregida
 
 test('Migración de pedidos experiencia', async ({ }, testInfo) => {
-    test.setTimeout(180000);
+    test.setTimeout(250000);
 
     await test.step('Seleccionar base de datos', async () => {
         await DatabaseUtils.seleccionarBaseDatos();

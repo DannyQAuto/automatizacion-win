@@ -1,190 +1,126 @@
+// pages/base-page.ts
 import { Page, Locator } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Tipo para soportar ambos drivers
+type DriverType = Page | any; // 'any' para WebdriverIO Browser
+
 export class BasePage {
-readonly page: Page;
+readonly page: DriverType;
 baseUrl: string;
 private configFile: string;
-private readonly environment: string; // Identificar el ambiente
+private readonly environment: string;
 private static urlLogged = false;
+private readonly isMobile: boolean;
 
-constructor(page: Page, configFile: string = 'config.json') {
-        this.page = page;
+constructor(driver: DriverType, configFile: string = 'config.json') {
+        this.page = driver;
         this.configFile = configFile;
-        this.environment = configFile.includes('experiencia') ? 'experiencia' : 'winforce'; // Identificar ambiente
+        this.environment = configFile.includes('experiencia') ? 'experiencia' : 'winforce';
+        this.isMobile = this.isAppiumDriver(driver);
 
         this.baseUrl = this.obtenerUrlGuardada() || this.getDefaultUrl();
 
-        // Solo mostrar el log una vez
         if (!BasePage.urlLogged) {
             this.showInitialDashboard();
             BasePage.urlLogged = true;
         }
     }
 
-    // ►►► MÉTODO PARA OBTENER URL POR DEFECTO SEGÚN EL AMBIENTE
-    private getDefaultUrl(): string {
-        if (this.environment === 'experiencia') {
-            return 'http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages';
+    // ►►► DETECTAR TIPO DE DRIVER
+    private isAppiumDriver(driver: any): boolean {
+        return driver &&
+               typeof driver.$ === 'function' &&
+               typeof driver.setValue === 'function' &&
+               !('goto' in driver); // Playwright tiene goto, Appium no
+    }
+
+    // ►►► MÉTODOS COMPATIBLES CON AMBOS DRIVERS
+
+    // Click genérico
+    async click(selector: string): Promise<void> {
+        if (this.isMobile) {
+            // Appium
+            const element = await this.page.$(selector);
+            await element.click();
         } else {
-            return 'http://10.23.100.19:183/proy_JC';
+            // Playwright
+            const locator = (this.page as Page).locator(selector);
+            await locator.waitFor({ state: 'visible' });
+            await locator.click();
         }
     }
 
-    // ►►► MÉTODO PARA MOSTRAR DASHBOARD INICIAL
-    private showInitialDashboard(): void {
-        console.log('\n' + '═'.repeat(80));
-        console.log('           🚀 AUTOMATIZACION DE VENTAS');
-        console.log('═'.repeat(80));
-        console.log('  TEST: Flujo completo Winforce con múltiples ventas');
-        console.log(`  ⏰ TIME: ${new Date().toLocaleTimeString()} | 📅 DATE: ${new Date().toLocaleDateString()}`);
-        console.log('═'.repeat(80));
-        console.log(`🎯 Ambiente: ${this.environment.toUpperCase()} && CRMEXPERIENCIA`);
-        console.log(`✅ URL base configurada: ${this.baseUrl} & http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages/login_form.php `);
-        console.log('═'.repeat(80));
+    // Set value genérico
+    async setValue(selector: string, value: string): Promise<void> {
+        if (this.isMobile) {
+            // Appium
+            const element = await this.page.$(selector);
+            await element.setValue(value);
+        } else {
+            // Playwright
+            const locator = (this.page as Page).locator(selector);
+            await locator.waitFor({ state: 'visible' });
+            await locator.fill(value);
+        }
     }
 
-    // ►►► MÉTODO PARA OBTENER LA URL GUARDADA
-    private obtenerUrlGuardada(): string | null {
+    // Wait for element genérico
+    async waitForElement(selector: string, timeout: number = 10000): Promise<void> {
+        if (this.isMobile) {
+            // Appium
+            const element = await this.page.$(selector);
+            await element.waitForDisplayed({ timeout });
+        } else {
+            // Playwright
+            const locator = (this.page as Page).locator(selector);
+            await locator.waitFor({ state: 'visible', timeout });
+        }
+    }
+
+    // Get text genérico
+    async getText(selector: string): Promise<string> {
+        if (this.isMobile) {
+            // Appium
+            const element = await this.page.$(selector);
+            return await element.getText();
+        } else {
+            // Playwright
+            const locator = (this.page as Page).locator(selector);
+            await locator.waitFor({ state: 'visible' });
+            return await locator.textContent() ?? '';
+        }
+    }
+
+    // Is visible genérico
+    async isVisible(selector: string, timeout: number = 5000): Promise<boolean> {
         try {
-            const configPath = path.join(__dirname, this.configFile);
-            if (fs.existsSync(configPath)) {
-                const configData = fs.readFileSync(configPath, 'utf8');
-                const config = JSON.parse(configData);
-                const url = config.lastBaseUrl || null;
-                if (url) {
-                    console.log(`📖 URL recuperada de ${this.configFile}: ${url}`);
-                }
-                return url;
+            if (this.isMobile) {
+                // Appium
+                const element = await this.page.$(selector);
+                return await element.isDisplayed();
+            } else {
+                // Playwright
+                const locator = (this.page as Page).locator(selector);
+                await locator.waitFor({ state: 'visible', timeout });
+                return true;
             }
-        } catch (error) {
-            console.log('⚠️ Error leyendo configuración:', error.message);
-        }
-        return null;
-    }
-
-    // ►►► MÉTODO PARA GUARDAR LA URL PERSISTENTEMENTE
-    private guardarUrlEnConfig(nuevaUrl: string): void {
-        try {
-            const configPath = path.join(__dirname, this.configFile);
-            const configData = {
-                lastBaseUrl: nuevaUrl,
-                updatedAt: new Date().toISOString(),
-                environment: this.environment
-            };
-            fs.writeFileSync(configPath, JSON.stringify(configData, null, 2));
-            console.log(`💾 URL guardada en ${this.configFile}`);
-        } catch (error) {
-            console.log('⚠️ Error guardando configuración:', error.message);
+        } catch {
+            return false;
         }
     }
 
-    // ►►► NUEVO MÉTODO: Verificar si la URL corresponde al ambiente actual
-    private debeGuardarUrl(url: string): boolean {
-        const esUrlWinforce = url.includes('10.23.100.19') || url.includes('proy_JC');
-        const esUrlExperiencia = url.includes('10.23.100.24') || url.includes('EXPERIENCIA');
+    // ►►► MÉTODOS QUE FALTABAN DE TU BASE PAGE ORIGINAL
 
-        if (this.environment === 'winforce' && esUrlWinforce) {
-            return true;
-        }
-        if (this.environment === 'experiencia' && esUrlExperiencia) {
-            return true;
-        }
-
-        return false;
-    }
-
-    // ►►► MÉTODO PARA ACTUALIZAR URL (CON BLOQUEO DE MODIFICACIÓN CRUZADA)
-    setBaseUrl(newUrl: string): void {
-        const urlLimpia = newUrl.replace(/\/\w+$/, '');
-        this.baseUrl = urlLimpia;
-
-        // SOLO guardar si la URL pertenece al mismo ambiente
-        if (this.debeGuardarUrl(urlLimpia)) {
-            this.guardarUrlEnConfig(urlLimpia);
-            console.log(`✅ URL ${this.environment} actualizada a: ${urlLimpia}`);
-        } else {
-
-        }
-    }
-
-    // ►►► MÉTODO PARA CAMBIAR A LA RUTA ALTERNATIVA (CON BLOQUEO)
-    setAlternativeUrl(): void {
-        const alternativeUrl = 'http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages';
-        this.baseUrl = alternativeUrl;
-
-        // SOLO guardar si es el ambiente de experiencia
-        if (this.environment === 'experiencia') {
-            this.guardarUrlEnConfig(alternativeUrl);
-            console.log(`🔄 URL base cambiada a ruta alternativa: ${alternativeUrl}`);
-        } else {
-            console.log(`🚫 BLOQUEO: No se puede cambiar a URL alternativa desde ambiente ${this.environment}`);
-            console.log(`ℹ️  URL alternativa solo disponible para ambiente experiencia`);
-        }
-    }
-
-    // ►►► MÉTODO PARA NAVEGAR A LA RUTA ALTERNATIVA DE LOGIN (SOLO EXPERIENCIA)
-    async navigateToAlternativeLogin(waitForLoad: boolean = true): Promise<void> {
-        if (this.environment !== 'experiencia') {
-            console.log(`🚫 BLOQUEO: navigateToAlternativeLogin solo disponible para ambiente experiencia`);
-            return;
-        }
-
-        const alternativeLoginUrl = 'http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages/login_form.php';
-        await this.page.goto(alternativeLoginUrl, {
-            waitUntil: 'domcontentloaded',
-            timeout: 30000
-        });
-
-        if (waitForLoad) {
-            await this.waitForPageLoad(30000);
-        }
-        console.log(`🧭 Navegado a ruta alternativa de login: ${alternativeLoginUrl}`);
-    }
-
-    // ►►► MÉTODO PARA RESTABLECER LA URL POR DEFECTO
-    resetToDefaultUrl(): void {
-        const defaultUrl = this.getDefaultUrl();
-        this.baseUrl = defaultUrl;
-
-        // Siempre permitir reset a la URL por defecto del ambiente
-        this.guardarUrlEnConfig(defaultUrl);
-        console.log(`🔄 URL base restablecida a valor por defecto: ${defaultUrl}`);
-    }
-
-    // ►►► MÉTODO PARA OBTENER EL AMBIENTE ACTUAL
-    getCurrentEnvironment(): string {
-        return this.environment;
-    }
-
-    // ►►► MÉTODO PARA OBTENER EL ARCHIVO DE CONFIGURACIÓN ACTUAL
-    getCurrentConfigFile(): string {
-        return this.configFile;
-    }
-
-    // ►►► MÉTODO PARA CAMBIAR EL ARCHIVO DE CONFIGURACIÓN (CON VALIDACIÓN)
-    setConfigFile(newConfigFile: string): void {
-        const oldEnvironment = this.environment;
-        this.configFile = newConfigFile;
-
-        // Recargar la URL desde el nuevo archivo de configuración
-        const nuevaUrl = this.obtenerUrlGuardada() || this.getDefaultUrl();
-        this.baseUrl = nuevaUrl;
-
-        console.log(`📁 Archivo de configuración cambiado: ${oldEnvironment} → ${this.environment}`);
-        console.log(`✅ URL base actual: ${this.baseUrl}`);
-    }
-
-    // ►►► MÉTODO PARA VERIFICAR SI UNA URL ES COMPATIBLE CON EL AMBIENTE ACTUAL
-    isUrlCompatible(url: string): boolean {
-        return this.debeGuardarUrl(url);
-    }
-
-    // Método para navegar a una URL relativa
+    // Método para navegar a una URL relativa (solo Playwright)
     async navigateTo(path: string = '', waitForLoad: boolean = true): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('navigateTo solo disponible para Playwright');
+        }
+
         const fullUrl = path ? `${this.baseUrl}/${path.replace(/^\//, '')}` : this.baseUrl;
-        await this.page.goto(fullUrl, {
+        await (this.page as Page).goto(fullUrl, {
             waitUntil: 'domcontentloaded',
             timeout: 30000
         });
@@ -209,44 +145,60 @@ constructor(page: Page, configFile: string = 'config.json') {
         await this.navigateTo('ventas', waitForLoad);
     }
 
-    // Método para esperar y hacer click
+    // ►►► MÉTODOS CON LOCATOR (solo Playwright)
     async waitAndClick(locator: Locator): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('waitAndClick con Locator solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         await locator.click();
     }
 
-    // Método para llenar un campo
     async fillField(locator: Locator, text: string): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('fillField con Locator solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         await locator.fill(text);
     }
 
-    // Método para obtener texto
     async getElementText(locator: Locator): Promise<string> {
+        if (this.isMobile) {
+            throw new Error('getElementText con Locator solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         return await locator.textContent() ?? '';
     }
 
-    // Método para seleccionar opción en un dropdown por value
+    // ►►► MÉTODOS PARA DROPDOWN (solo Playwright)
     async selectOptionByValue(selectLocator: Locator, value: string): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('selectOptionByValue solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         await selectLocator.selectOption({ value: value });
     }
 
-    // Método para seleccionar opción en un dropdown por texto visible
     async selectOptionByLabel(selectLocator: Locator, label: string): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('selectOptionByLabel solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         await selectLocator.selectOption({ label: label });
     }
 
-    // Método para seleccionar opción en un dropdown por índice
     async selectOptionByIndex(selectLocator: Locator, index: number): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('selectOptionByIndex solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         await selectLocator.selectOption({ index: index });
     }
 
-    // Método genérico para seleccionar opción
     async selectOption(selectLocator: Locator, option: string | { value?: string, label?: string, index?: number }): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('selectOption solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
 
         if (typeof option === 'string') {
@@ -260,28 +212,37 @@ constructor(page: Page, configFile: string = 'config.json') {
         }
     }
 
-    // Método para obtener el valor seleccionado de un dropdown
     async getSelectedOptionValue(selectLocator: Locator): Promise<string> {
+        if (this.isMobile) {
+            throw new Error('getSelectedOptionValue solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         return await selectLocator.inputValue();
     }
 
-    // Método para obtener el texto de la opción seleccionada
     async getSelectedOptionText(selectLocator: Locator): Promise<string> {
+        if (this.isMobile) {
+            throw new Error('getSelectedOptionText solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         const selectedOption = selectLocator.locator('option:checked');
         return await selectedOption.textContent() ?? '';
     }
 
-    // Método para verificar si una opción específica está seleccionada
     async isOptionSelected(selectLocator: Locator, value: string): Promise<boolean> {
+        if (this.isMobile) {
+            throw new Error('isOptionSelected solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         const selectedValue = await this.getSelectedOptionValue(selectLocator);
         return selectedValue === value;
     }
 
-    // Método para marcar/desmarcar checkbox
+    // ►►► MÉTODOS PARA CHECKBOX (solo Playwright)
     async setCheckbox(locator: Locator, checked: boolean): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('setCheckbox solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         const isChecked = await locator.isChecked();
 
@@ -292,37 +253,44 @@ constructor(page: Page, configFile: string = 'config.json') {
         }
     }
 
-    // Método para marcar checkbox
     async checkCheckbox(locator: Locator): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('checkCheckbox solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         await locator.check();
     }
 
-    // Método para desmarcar checkbox
     async uncheckCheckbox(locator: Locator): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('uncheckCheckbox solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         await locator.uncheck();
     }
 
-    // Método para verificar si un checkbox está marcado
     async isCheckboxChecked(locator: Locator): Promise<boolean> {
+        if (this.isMobile) {
+            throw new Error('isCheckboxChecked solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         return await locator.isChecked();
     }
 
-    // Método para llenar textarea
+    // ►►► MÉTODOS PARA TEXTAREA (solo Playwright)
     async fillTextarea(locator: Locator, text: string): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('fillTextarea solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         await locator.fill(text);
     }
 
-    // Método para tomar screenshot
-    async takeScreenshot(name: string): Promise<void> {
-        const screenshot = await this.page.screenshot();
-    }
-
-    // Método adicional: obtener todas las opciones de un select
+    // ►►► MÉTODOS PARA OBTENER OPCIONES DE SELECT (solo Playwright)
     async getSelectOptions(selectLocator: Locator): Promise<Array<{value: string, text: string}>> {
+        if (this.isMobile) {
+            throw new Error('getSelectOptions solo disponible para Playwright');
+        }
         await selectLocator.waitFor({ state: 'visible' });
         const options = await selectLocator.locator('option').all();
 
@@ -336,18 +304,25 @@ constructor(page: Page, configFile: string = 'config.json') {
         return optionsData;
     }
 
-    // Método para esperar a que un elemento esté visible
+    // ►►► MÉTODOS DE ESPERA (solo Playwright)
     async waitForElementVisible(locator: Locator, timeout: number = 10000): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('waitForElementVisible solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible', timeout });
     }
 
-    // Método para esperar to que un elemento esté oculto
     async waitForElementHidden(locator: Locator, timeout: number = 10000): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('waitForElementHidden solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'hidden', timeout });
     }
 
-    // Método para verificar si un elemento está visible
     async isElementVisible(locator: Locator, timeout: number = 5000): Promise<boolean> {
+        if (this.isMobile) {
+            throw new Error('isElementVisible con Locator solo disponible para Playwright');
+        }
         try {
             await locator.waitFor({ state: 'visible', timeout });
             return true;
@@ -356,8 +331,10 @@ constructor(page: Page, configFile: string = 'config.json') {
         }
     }
 
-    // Método para verificar si un elemento existe
     async isElementExists(locator: Locator, timeout: number = 5000): Promise<boolean> {
+        if (this.isMobile) {
+            throw new Error('isElementExists con Locator solo disponible para Playwright');
+        }
         try {
             await locator.waitFor({ state: 'attached', timeout });
             return true;
@@ -366,32 +343,45 @@ constructor(page: Page, configFile: string = 'config.json') {
         }
     }
 
-    // Método para obtener el valor de un atributo
+    // ►►► MÉTODOS PARA ATRIBUTOS (solo Playwright)
     async getAttribute(locator: Locator, attribute: string): Promise<string | null> {
+        if (this.isMobile) {
+            throw new Error('getAttribute con Locator solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         return await locator.getAttribute(attribute);
     }
 
-    // Método para hacer hover sobre un elemento
+    // ►►► MÉTODOS DE INTERACCIÓN (solo Playwright)
     async hover(locator: Locator): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('hover solo disponible para Playwright');
+        }
         await locator.waitFor({ state: 'visible' });
         await locator.hover();
     }
 
-    // Método para presionar una tecla
     async pressKey(key: string): Promise<void> {
-        await this.page.keyboard.press(key);
+        if (this.isMobile) {
+            throw new Error('pressKey solo disponible para Playwright');
+        }
+        await (this.page as Page).keyboard.press(key);
     }
 
-    // Método para escribir texto
     async typeText(text: string): Promise<void> {
-        await this.page.keyboard.type(text);
+        if (this.isMobile) {
+            throw new Error('typeText solo disponible para Playwright');
+        }
+        await (this.page as Page).keyboard.type(text);
     }
 
-    // Método para limpiar cookies y storage
+    // ►►► MÉTODOS DE NAVEGACIÓN (solo Playwright)
     async clearBrowserData(): Promise<void> {
-        await this.page.context().clearCookies();
-        await this.page.evaluate(() => {
+        if (this.isMobile) {
+            throw new Error('clearBrowserData solo disponible para Playwright');
+        }
+        await (this.page as Page).context().clearCookies();
+        await (this.page as Page).evaluate(() => {
             try {
                 localStorage.clear();
                 sessionStorage.clear();
@@ -401,33 +391,242 @@ constructor(page: Page, configFile: string = 'config.json') {
         });
     }
 
-    // Método para recargar la página
     async reloadPage(): Promise<void> {
-        await this.page.reload();
+        if (this.isMobile) {
+            throw new Error('reloadPage solo disponible para Playwright');
+        }
+        await (this.page as Page).reload();
     }
 
-    // Método para ir hacia atrás
     async goBack(): Promise<void> {
-        await this.page.goBack();
+        if (this.isMobile) {
+            throw new Error('goBack solo disponible para Playwright');
+        }
+        await (this.page as Page).goBack();
     }
 
-    // Método para ir hacia adelante
     async goForward(): Promise<void> {
-        await this.page.goForward();
+        if (this.isMobile) {
+            throw new Error('goForward solo disponible para Playwright');
+        }
+        await (this.page as Page).goForward();
     }
 
-    // Método para obtener la URL actual
     async getCurrentUrl(): Promise<string> {
-        return this.page.url();
+        if (this.isMobile) {
+            throw new Error('getCurrentUrl solo disponible para Playwright');
+        }
+        return (this.page as Page).url();
     }
 
-    // Método para obtener el título de la página
     async getPageTitle(): Promise<string> {
-        return await this.page.title();
+        if (this.isMobile) {
+            throw new Error('getPageTitle solo disponible para Playwright');
+        }
+        return await (this.page as Page).title();
     }
 
-    // Método para esperar a que la página se cargue completamente
+    // ►►► MÉTODOS EXCLUSIVOS DE APPIUM
+    async mobileSwipe(startX: number, startY: number, endX: number, endY: number): Promise<void> {
+        if (!this.isMobile) {
+            throw new Error('mobileSwipe solo disponible para Appium');
+        }
+
+        await this.page.touchAction([
+            { action: 'press', x: startX, y: startY },
+            { action: 'wait', ms: 500 },
+            { action: 'moveTo', x: endX, y: endY },
+            { action: 'release' }
+        ]);
+    }
+
+    async pressMobileKey(keyCode: number): Promise<void> {
+        if (!this.isMobile) {
+            throw new Error('pressMobileKey solo disponible para Appium');
+        }
+        await this.page.pressKeyCode(keyCode);
+    }
+
+    async hideKeyboard(): Promise<void> {
+        if (!this.isMobile) {
+            throw new Error('hideKeyboard solo disponible para Appium');
+        }
+        await this.page.hideKeyboard();
+    }
+
+    async getDeviceSize(): Promise<{ width: number; height: number }> {
+        if (!this.isMobile) {
+            throw new Error('getDeviceSize solo disponible para Appium');
+        }
+        return await this.page.getWindowSize();
+    }
+
+    // ►►► MÉTODOS DE CONFIGURACIÓN (comunes a ambos)
+    private getDefaultUrl(): string {
+        if (this.environment === 'experiencia') {
+            return 'http://10.23.100.24/proy_JC/Win.CRM_EXPERIENCIA/pages';
+        } else {
+            return 'http://10.23.100.19:183/proy_JC';
+        }
+    }
+
+    private showInitialDashboard(): void {
+        const platform = this.isMobile ? '📱 MOBILE' : '🌐 WEB';
+        console.log('\n' + '═'.repeat(80));
+        console.log(`           🚀 AUTOMATIZACION ${platform}`);
+        console.log('═'.repeat(80));
+        console.log('  TEST: Flujo completo con múltiples ventas');
+        console.log(`  ⏰ TIME: ${new Date().toLocaleTimeString()} | 📅 DATE: ${new Date().toLocaleDateString()}`);
+        console.log('═'.repeat(80));
+        console.log(`🎯 Ambiente: ${this.environment.toUpperCase()} && CRMEXPERIENCIA`);
+        console.log(`✅ URL base configurada: ${this.baseUrl}`);
+        console.log(`🔧 Plataforma: ${this.isMobile ? 'Appium (Mobile)' : 'Playwright (Web)'}`);
+        console.log('═'.repeat(80));
+    }
+
+    private obtenerUrlGuardada(): string | null {
+        try {
+            const configPath = path.join(__dirname, this.configFile);
+            if (fs.existsSync(configPath)) {
+                const configData = fs.readFileSync(configPath, 'utf8');
+                const config = JSON.parse(configData);
+                const url = config.lastBaseUrl || null;
+                if (url) {
+                    console.log(`📖 URL recuperada de ${this.configFile}: ${url}`);
+                }
+                return url;
+            }
+        } catch (error: any) {
+            console.log('⚠️ Error leyendo configuración:', error.message);
+        }
+        return null;
+    }
+
+    private guardarUrlEnConfig(nuevaUrl: string): void {
+        try {
+            const configPath = path.join(__dirname, this.configFile);
+            const configData = {
+                lastBaseUrl: nuevaUrl,
+                updatedAt: new Date().toISOString(),
+                environment: this.environment,
+                platform: this.isMobile ? 'mobile' : 'web'
+            };
+            fs.writeFileSync(configPath, JSON.stringify(configData, null, 2));
+            console.log(`💾 URL guardada en ${this.configFile}`);
+        } catch (error: any) {
+            console.log('⚠️ Error guardando configuración:', error.message);
+        }
+    }
+
+    private debeGuardarUrl(url: string): boolean {
+        const esUrlWinforce = url.includes('10.23.100.19') || url.includes('proy_JC');
+        const esUrlExperiencia = url.includes('10.23.100.24') || url.includes('EXPERIENCIA');
+
+        if (this.environment === 'winforce' && esUrlWinforce) {
+            return true;
+        }
+        if (this.environment === 'experiencia' && esUrlExperiencia) {
+            return true;
+        }
+        return false;
+    }
+
+    setBaseUrl(newUrl: string): void {
+        const urlLimpia = newUrl.replace(/\/\w+$/, '');
+        this.baseUrl = urlLimpia;
+
+        if (this.debeGuardarUrl(urlLimpia)) {
+            this.guardarUrlEnConfig(urlLimpia);
+            console.log(`✅ URL ${this.environment} actualizada a: ${urlLimpia}`);
+        }
+    }
+
+    setAlternativeUrl(): void {
+        const alternativeUrl = 'http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages';
+        this.baseUrl = alternativeUrl;
+
+        if (this.environment === 'experiencia') {
+            this.guardarUrlEnConfig(alternativeUrl);
+            console.log(`🔄 URL base cambiada a ruta alternativa: ${alternativeUrl}`);
+        } else {
+            console.log(`🚫 BLOQUEO: No se puede cambiar a URL alternativa desde ambiente ${this.environment}`);
+        }
+    }
+
+    async navigateToAlternativeLogin(waitForLoad: boolean = true): Promise<void> {
+        if (this.isMobile) {
+            throw new Error('navigateToAlternativeLogin solo disponible para Playwright');
+        }
+
+        if (this.environment !== 'experiencia') {
+            console.log(`🚫 BLOQUEO: navigateToAlternativeLogin solo disponible para ambiente experiencia`);
+            return;
+        }
+
+        const alternativeLoginUrl = 'http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages/login_form.php';
+        await (this.page as Page).goto(alternativeLoginUrl, {
+            waitUntil: 'domcontentloaded',
+            timeout: 30000
+        });
+
+        if (waitForLoad) {
+            await this.waitForPageLoad(30000);
+        }
+        console.log(`🧭 Navegado a ruta alternativa de login: ${alternativeLoginUrl}`);
+    }
+
+    resetToDefaultUrl(): void {
+        const defaultUrl = this.getDefaultUrl();
+        this.baseUrl = defaultUrl;
+        this.guardarUrlEnConfig(defaultUrl);
+        console.log(`🔄 URL base restablecida a valor por defecto: ${defaultUrl}`);
+    }
+
+    getCurrentEnvironment(): string {
+        return this.environment;
+    }
+
+    getCurrentConfigFile(): string {
+        return this.configFile;
+    }
+
+    setConfigFile(newConfigFile: string): void {
+        const oldEnvironment = this.environment;
+        this.configFile = newConfigFile;
+
+        const nuevaUrl = this.obtenerUrlGuardada() || this.getDefaultUrl();
+        this.baseUrl = nuevaUrl;
+
+        console.log(`📁 Archivo de configuración cambiado: ${oldEnvironment} → ${this.environment}`);
+        console.log(`✅ URL base actual: ${this.baseUrl}`);
+    }
+
+    isUrlCompatible(url: string): boolean {
+        return this.debeGuardarUrl(url);
+    }
+
+    // ►►► MÉTODOS ADICIONALES COMPATIBLES
+    async takeScreenshot(name: string): Promise<void> {
+        if (this.isMobile) {
+            await this.page.saveScreenshot(`./screenshots/mobile-${name}.png`);
+        } else {
+            await (this.page as Page).screenshot({ path: `./screenshots/web-${name}.png` });
+        }
+    }
+
     async waitForPageLoad(timeout: number = 30000): Promise<void> {
-        await this.page.waitForLoadState('networkidle', { timeout });
+        if (!this.isMobile) {
+            await (this.page as Page).waitForLoadState('networkidle', { timeout });
+        }
+        // Para Appium, no hay equivalente directo
+    }
+
+    // Método para obtener información de la plataforma
+    getPlatformInfo(): { isMobile: boolean; platform: string; environment: string } {
+        return {
+            isMobile: this.isMobile,
+            platform: this.isMobile ? 'appium' : 'playwright',
+            environment: this.environment
+        };
     }
 }

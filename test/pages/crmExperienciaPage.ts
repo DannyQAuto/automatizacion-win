@@ -28,6 +28,9 @@ readonly confirmarSiButton: Locator;
 readonly okButton: Locator;
 readonly comentario: Locator;
 
+// Nuevo locator para el código de pedido
+readonly codigoPedidoInput: Locator;
+
 constructor(page: Page) {
         super(page);
 
@@ -56,6 +59,46 @@ constructor(page: Page) {
         this.confirmarSiButton = page.locator("//button[@id='boton_enviar_validacion']");
         this.okButton = page.locator("//button[contains(@class,'confirm') and contains(text(),'OK')]");
         this.comentario = page.locator("//textarea[@id='txt_descripcion_validacion']");
+
+        // Nuevo locator para el código de pedido
+        this.codigoPedidoInput = page.locator("//input[@id='txt_cod_pedido']");
+    }
+
+    // ►►► MÉTODO PARA GUARDAR CÓDIGO DE PEDIDO
+    async guardarCodigoPedido(): Promise<void> {
+        console.log('💾 Intentando guardar código de pedido...');
+
+        try {
+            // Esperar a que el input esté visible y tenga valor
+            await this.codigoPedidoInput.waitFor({ state: 'visible', timeout: 5000 });
+
+            // Obtener el valor del input
+            const codigoPedido = await this.codigoPedidoInput.inputValue();
+            console.log(`📦 Código de pedido capturado: "${codigoPedido}"`);
+
+            if (codigoPedido && codigoPedido.trim() !== '') {
+                // Ruta donde se guardará (misma que dnis.json)
+                const filePath = path.join(__dirname, '../specs/codpedido.json');
+
+                // Datos a guardar
+                const pedidoData = {
+                    codigoPedido: codigoPedido.trim(),
+                    fechaGuardado: new Date().toISOString(),
+                    descripcion: "Código de pedido desde CRM Experiencia"
+                };
+
+                // Guardar en JSON
+                fs.writeFileSync(filePath, JSON.stringify(pedidoData, null, 2), 'utf8');
+                console.log(`✅ Código de pedido GUARDADO: ${codigoPedido.trim()}`);
+                console.log(`📁 Ubicación: ${filePath}`);
+
+            } else {
+                console.log('⚠️ No se pudo capturar el código de pedido');
+            }
+
+        } catch (error: any) {
+            console.log('❌ Error guardando código:', error.message);
+        }
     }
 
     // ►►► MÉTODO PARA OBTENER EL ÚLTIMO DNI DEL JSON
@@ -120,7 +163,7 @@ constructor(page: Page) {
         console.log('✅ Navegación completada');
     }
 
-    // Método para configurar filtros de búsqueda (ACTUALIZADO)
+    // Método para configurar filtros de búsqueda
     async configurarFiltros(dni?: string): Promise<string> {
         console.log('⚙️ Configurando filtros de búsqueda...');
 
@@ -163,11 +206,11 @@ constructor(page: Page) {
         await this.waitAndClick(this.telefonoIcon);
 
         // Esperar a que se carguen los selects
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForTimeout(2000);
         console.log('✅ Resultado procesado');
     }
 
-    // Método para completar validación
+    // ►►► MÉTODO COMPLETAR VALIDACIÓN ACTUALIZADO - GUARDA CÓDIGO ANTES DE GUARDAR
     async completarValidacion(comentario1: string = 'danny prueba'): Promise<void> {
         console.log('📝 Completando validación...');
 
@@ -181,6 +224,11 @@ constructor(page: Page) {
 
         await this.fillField(this.comentario, comentario1);
         console.log('✅ Comentario agregado');
+
+        // ✅✅✅ ESPERAR A QUE APAREZCA EL CÓDIGO DE PEDIDO Y GUARDARLO
+        console.log('🔄 Esperando código de pedido...');
+        await this.page.waitForTimeout(1000);
+        await this.guardarCodigoPedido();
 
         // Hacer clic en Guardar
         await this.waitAndClick(this.guardarButton);
@@ -200,7 +248,7 @@ constructor(page: Page) {
         console.log('✅ Confirmación completada');
     }
 
-    // Método completo que ejecuta todo el flujo (ACTUALIZADO)
+    // ►►► MÉTODO COMPLETO CORREGIDO
     async ejecutarFlujoCompleto(dni?: string): Promise<void> {
         console.log('\n🚀 INICIANDO FLUJO COMPLETO DE VALIDACIÓN CRM');
         console.log('═'.repeat(60));
@@ -209,12 +257,9 @@ constructor(page: Page) {
             await this.login();
             await this.navegarAValidacionAsesor();
 
-            // Obtener el DNI usado (del parámetro o del JSON)
             const dniUsado = await this.configurarFiltros(dni);
-
             await this.realizarBusqueda();
 
-            // Verificar si hay resultados antes de continuar
             const hayResultados = await this.isElementVisible(this.telefonoIcon, 5000);
             if (hayResultados) {
                 await this.procesarResultado();
@@ -222,8 +267,7 @@ constructor(page: Page) {
                 await this.confirmarModal();
                 console.log(`✅ Validación completada para DNI: ${dniUsado}`);
             } else {
-                console.log(`❌ No se encontraron registros para DNI: ${dniUsado}`);
-                console.log('💡 Revisa que el DNI exista en el sistema');
+                console.log(`❌ No hay registros para DNI: ${dniUsado}`);
             }
 
             console.log('═'.repeat(60));
@@ -233,6 +277,42 @@ constructor(page: Page) {
             console.log('❌ Error en el flujo:', error);
             throw error;
         }
+    }
+
+    // ►►► MÉTODO PARA LEER CÓDIGO DE PEDIDO GUARDADO
+    async leerCodigoPedidoGuardado(): Promise<string | null> {
+        try {
+            const filePath = path.join(__dirname, '../specs/codpedido.json');
+            console.log(`📁 Buscando archivo en: ${filePath}`);
+
+            if (fs.existsSync(filePath)) {
+                const codPedidoData = fs.readFileSync(filePath, 'utf8');
+                const codPedidoJson = JSON.parse(codPedidoData);
+
+                console.log(`📦 Código de pedido leído: ${codPedidoJson.codigoPedido}`);
+                return codPedidoJson.codigoPedido;
+            } else {
+                console.log('⚠️ No se encontró el archivo codpedido.json');
+                return null;
+            }
+        } catch (error: any) {
+            console.log('❌ Error leyendo código de pedido:', error.message);
+            return null;
+        }
+    }
+
+    // ►►► MÉTODO PARA VERIFICAR SI EL ARCHIVO EXISTE
+    async verificarArchivoCodigoPedido(): Promise<boolean> {
+        const filePath = path.join(__dirname, '../specs/codpedido.json');
+        const existe = fs.existsSync(filePath);
+        console.log(`📁 Archivo codpedido.json existe: ${existe}`);
+
+        if (existe) {
+            const contenido = fs.readFileSync(filePath, 'utf8');
+            console.log(`📄 Contenido del archivo: ${contenido}`);
+        }
+
+        return existe;
     }
 
     // ►►► MÉTODO ADICIONAL: Para cambiar específicamente a la URL de CRM Experiencia
