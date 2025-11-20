@@ -1,4 +1,6 @@
 import { PageBase } from './PageBase';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 export class SuspensionPage extends PageBase {
     public readonly MisSolicitudes = '//android.widget.ImageView[@content-desc="Mis Solicitudes"]';
@@ -30,6 +32,49 @@ export class SuspensionPage extends PageBase {
     public readonly ObtenerDiasSuspen = '//android.view.View[@content-desc="Días suspendidos"]/following-sibling::*[1]';
     public readonly ObtenerDiasDisponi = '//android.view.View[@content-desc="Días disponibles"]/following-sibling::*[1]';
 
+    //private datosFilePath = 'D:\\PlayWrightWin\\test\\specsapp\\datos.json';
+    private datosFilePath = path.join(process.cwd(), 'Test', 'specsapp', 'datos.json');
+
+    private async guardarDatos(solicitud: string, codigo: string, estado: string, fechaini: string, fechafin: string, diassuspendidos: string, diasdisponibles: string): Promise<void> {
+        let datos: any = {};
+
+        // Leer el archivo existente si existe
+        if (await fs.pathExists(this.datosFilePath)) {
+            const contenido = await fs.readFile(this.datosFilePath, 'utf8');
+                    if (contenido.trim().length > 0) {
+                        try {
+                            datos = JSON.parse(contenido);
+                        } catch (e) {
+                            console.warn("⚠ JSON corrupto, creando uno nuevo...");
+                            datos = {};
+                        }
+                    }
+        }
+
+        // Actualizar o agregar el código de pedido
+        datos.CodigoSolicitud = solicitud;
+        datos.CodigoPedido = codigo;
+        datos.Estado = estado;
+        datos.FechaInicio = fechaini;
+        datos.FechaFin = fechafin;
+        datos.DiasSuspendidos = diassuspendidos;
+        datos.DiasDisponibles = diasdisponibles;
+
+        await fs.writeJson(this.datosFilePath, datos, { spaces: 2 });
+        console.log("✅ Datos guardados correctamente en datos.json");
+
+        // Guardar en el archivo
+        //await fs.writeJson(this.datosFilePath, datos, { spaces: 1 });
+        //const jsonContent = JSON.stringify(datos, null, 2);
+        //await fs.writeFile(this.datosFilePath, jsonContent, 'utf8');
+        console.log('✅ Código de solicitud guardado en datos.json:', solicitud);
+        console.log('✅ Código de pedido guardado en datos.json:', codigo);
+        console.log('✅ Estado guardado en datos.json:', estado);
+        console.log('✅ Fecha de Inicio guardado en datos.json:', fechaini);
+        console.log('✅ Fecha Fin guardado en datos.json:', fechafin);
+        console.log('✅ Cantidad de Días Suspendidos guardado en datos.json:', diassuspendidos);
+        console.log('✅ Cantidad de Días Disponibles guardado en datos.json:', diasdisponibles);
+    }
 
 
 
@@ -119,6 +164,7 @@ export class SuspensionPage extends PageBase {
             await browser.pause(1000);
             //await this.waitForElement(this.AgregarSolicitud);
             //console.log('✅ En página de solicitudes');
+            await this.guardarDatos(solicitud, codigo, estado, fechaini, fechafin, diassuspendidos, diasdisponibles);
         }
     }
 //await this.click(this.celularPrincipal);
