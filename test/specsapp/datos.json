@@ -1,9 +1,10 @@
 {
-  "CodigoSolicitud": "WIN-RQ-2025-70351",
+  "CodigoSolicitud": "WIN-RQ-2025-70361",
+  "FechaHoraRegistro": "24-11-2025 11:29:30",
   "CodigoPedido": "2082719",
   "Estado": "Registrada",
-  "FechaInicio": "21/11/2025",
-  "FechaFin": "09/12/2025",
-  "DiasSuspendidos": "18",
-  "DiasDisponibles": "42"
+  "FechaInicio": "25-11-2025",
+  "FechaFin": "30-12-2025",
+  "DiasSuspendidos": "35",
+  "DiasDisponibles": "25"
 }

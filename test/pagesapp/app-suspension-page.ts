@@ -13,9 +13,9 @@ export class SuspensionPage extends PageBase {
     public readonly comboTipoSolicitud = '-android uiautomator:new UiSelector().descriptionContains("Tipo de solicitud")';
     public readonly SeleccionarSuspension = '-android uiautomator:new UiSelector().description("Suspensión Temporal")';
     public readonly SeleccionarFechaIni = '-android uiautomator:new UiSelector().descriptionContains("Inicio de la suspensión")';
-    public readonly SeleccionarDiaIni = '-android uiautomator:new UiSelector().description("21, Friday, November 21, 2025")';
+    public readonly SeleccionarDiaIni = '-android uiautomator:new UiSelector().description("25, Tuesday, November 25, 2025")';
     public readonly SeleccionarFlecha = '-android uiautomator:new UiSelector().className("android.widget.Button").instance(3)';
-    public readonly SeleccionarFechaFin = '-android uiautomator:new UiSelector().description("9, Tuesday, December 9, 2025")';
+    public readonly SeleccionarFechaFin = '-android uiautomator:new UiSelector().description("30, Tuesday, December 30, 2025")';
     public readonly SeleccionarBtnListo = '-android uiautomator:new UiSelector().description("Listo")';
     public readonly comboMotivo = '-android uiautomator:new UiSelector().descriptionContains("Elige")';
     public readonly SeleccionarMotivo = '-android uiautomator:new UiSelector().description("Viaje")';
@@ -31,11 +31,13 @@ export class SuspensionPage extends PageBase {
     public readonly ObtenerFechaFin = '//android.view.View[@content-desc="Fin de suspensión temporal"]/following-sibling::*[1]';
     public readonly ObtenerDiasSuspen = '//android.view.View[@content-desc="Días suspendidos"]/following-sibling::*[1]';
     public readonly ObtenerDiasDisponi = '//android.view.View[@content-desc="Días disponibles"]/following-sibling::*[1]';
+    public readonly ObtenerFechaHora = '//android.view.View[@content-desc="Fecha y hora"]/following-sibling::*[1]';
+
 
     //private datosFilePath = 'D:\\PlayWrightWin\\test\\specsapp\\datos.json';
     private datosFilePath = path.join(process.cwd(), 'Test', 'specsapp', 'datos.json');
 
-    private async guardarDatos(solicitud: string, codigo: string, estado: string, fechaini: string, fechafin: string, diassuspendidos: string, diasdisponibles: string): Promise<void> {
+    private async guardarDatos(solicitud: string, fechaHoraRegistro: string, codigo: string, estado: string, fechainicio: string, fechafinal: string, diassuspendidos: string, diasdisponibles: string): Promise<void> {
         let datos: any = {};
 
         // Leer el archivo existente si existe
@@ -53,10 +55,11 @@ export class SuspensionPage extends PageBase {
 
         // Actualizar o agregar el código de pedido
         datos.CodigoSolicitud = solicitud;
+        datos.FechaHoraRegistro = fechaHoraRegistro;
         datos.CodigoPedido = codigo;
         datos.Estado = estado;
-        datos.FechaInicio = fechaini;
-        datos.FechaFin = fechafin;
+        datos.FechaInicio = fechainicio;
+        datos.FechaFin = fechafinal;
         datos.DiasSuspendidos = diassuspendidos;
         datos.DiasDisponibles = diasdisponibles;
 
@@ -68,10 +71,11 @@ export class SuspensionPage extends PageBase {
         //const jsonContent = JSON.stringify(datos, null, 2);
         //await fs.writeFile(this.datosFilePath, jsonContent, 'utf8');
         console.log('✅ Código de solicitud guardado en datos.json:', solicitud);
+        console.log('✅ Fecha y Hora de Registro guardado en datos.json:', fechaHoraRegistro);
         console.log('✅ Código de pedido guardado en datos.json:', codigo);
         console.log('✅ Estado guardado en datos.json:', estado);
-        console.log('✅ Fecha de Inicio guardado en datos.json:', fechaini);
-        console.log('✅ Fecha Fin guardado en datos.json:', fechafin);
+        console.log('✅ Fecha de Inicio guardado en datos.json:', fechainicio);
+        console.log('✅ Fecha Fin guardado en datos.json:', fechafinal);
         console.log('✅ Cantidad de Días Suspendidos guardado en datos.json:', diassuspendidos);
         console.log('✅ Cantidad de Días Disponibles guardado en datos.json:', diasdisponibles);
     }
@@ -126,6 +130,20 @@ export class SuspensionPage extends PageBase {
             expect(solicitud).toMatch(/^WIN-RQ-\d{4}-\d{5}$/);
             console.log('✅ Validación exitosa: Código de Solicitud es válido:', solicitud);
             await browser.pause(1000);
+            const fechaHora = await $(this.ObtenerFechaHora).getAttribute('content-desc');
+            console.log("📦 FECHA Y HORA DE REGISTRO:", fechaHora);
+            expect(fechaHora).toBeDefined();
+            expect(fechaHora).not.toBe('');
+            console.log('✅ Validación exitosa: Fecha y Hora de Registro es válido:', fechaHora);
+            // Eliminar coma y AM/PM
+            let fechaHoraRegistro = fechaHora
+                .replace(',', '')       // Quitar la coma
+                .replace(/ am/i, '')    // Quitar am
+                .replace(/ pm/i, '')    // Quitar pm
+                .replace(/\//g, '-')   // Quitar "/"
+                .trim();
+            console.log("⏰ FECHA Y HORA CONVERTIDA:", fechaHoraRegistro);
+            await browser.pause(1000);
             const codigo = await $(this.ObtenerCodigoPedido).getAttribute('content-desc');
             console.log("📦 CÓDIGO DE PEDIDO:", codigo);
             expect(codigo).toBeDefined();
@@ -143,12 +161,16 @@ export class SuspensionPage extends PageBase {
             expect(fechaini).toBeDefined();
             expect(fechaini).not.toBe('');
             console.log('✅ Validación exitosa: Fecha de Inicio es válido:', fechaini);
+            const fechainicio = fechaini.replace(/\//g, '-');
+            console.log('✅ Fecha Inicio convertida:', fechainicio);
             await browser.pause(1000);
             const fechafin = await $(this.ObtenerFechaFin).getAttribute('content-desc');
             console.log("📦 FECHA FIN:", fechafin);
             expect(fechafin).toBeDefined();
             expect(fechafin).not.toBe('');
             console.log('✅ Validación exitosa: Fecha Fin es válido:', fechafin);
+            const fechafinal = fechafin.replace(/\//g, '-');
+            console.log('✅ Fecha Fin convertida:', fechafinal);
             await browser.pause(1000);
             const diassuspendidos = await $(this.ObtenerDiasSuspen).getAttribute('content-desc');
             console.log("📦 CANTIDAD DE DÍAS SUSPENDIDOS:", diassuspendidos);
@@ -164,7 +186,7 @@ export class SuspensionPage extends PageBase {
             await browser.pause(1000);
             //await this.waitForElement(this.AgregarSolicitud);
             //console.log('✅ En página de solicitudes');
-            await this.guardarDatos(solicitud, codigo, estado, fechaini, fechafin, diassuspendidos, diasdisponibles);
+            await this.guardarDatos(solicitud, fechaHoraRegistro, codigo, estado, fechainicio, fechafinal, diassuspendidos, diasdisponibles);
         }
     }
 //await this.click(this.celularPrincipal);
