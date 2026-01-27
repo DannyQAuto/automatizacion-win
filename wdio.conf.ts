@@ -16,16 +16,16 @@ platformName: 'Android',
 'appium:platformVersion': '11.0',
 'appium:automationName': 'UiAutomator2',
 // 'appium:app': './test/apps/win.apk', // ← COMENTADA porque ya está instalada
-'appium:appPackage': 'com.win.miwin_app',
+'appium:appPackage': 'com.win.miwin_app.dev',
 'appium:appActivity': 'com.win.miwin_app.MainActivity',
 'appium:autoGrantPermissions': true,
 'appium:noReset': false, // ← CAMBIADO A false para reiniciar la app
 'appium:fullReset': false,
 'appium:newCommandTimeout': 300,
-'appium:avd': 'mobile_emulator1',
+'appium:avd': 'Emulador',
 // NUEVOS PARÁMETROS PARA FORZAR APERTURA:
-'appium:appWaitPackage': 'com.win.miwin_app',
-'appium:appWaitActivity': 'com.win.miwin_app.*',
+'appium:appWaitPackage': 'com.win.miwin_app.dev',
+'appium:appWaitActivity': 'com.win.miwin_app.MainActivity',
 'appium:appWaitDuration': 30000,
 'appium:autoLaunch': true, // ← FORZAR AUTO LAUNCH
 'appium:androidInstallTimeout': 90000,

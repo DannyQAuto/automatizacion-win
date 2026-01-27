@@ -1,15 +1,14 @@
 {
   "name": "playwright-win",
   "version": "1.0.0",
-
-
   "scripts": {
     "appium:basic": "wdio run wdio.conf.ts --spec test/specsapp/basic-app-test.spec.ts",
     "appium:solicitudes": "wdio run wdio.conf.ts --spec test/specsapp/solicitudeswin.spec.ts",
+    "appium:suspension": "wdio run wdio.conf.ts --spec test/specsapp/suspensionwin.spec.ts",
+    "appium:ampliacion": "wdio run wdio.conf.ts --spec test/specsapp/ampliacionwin.spec.ts",
     "appium:all": "wdio run wdio.conf.ts",
     "appium:setup": "if not exist screenshots mkdir screenshots"
   },
-
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/fs-extra": "^11.0.1",
@@ -26,7 +25,7 @@
     "allure-js-commons": "^2.9.2",
     "allure-playwright": "^2.9.2",
     "appium": "2.9.0",
-    "appium-uiautomator2-driver": "2.19.0",
+    "appium-uiautomator2-driver": "^2.45.1",
     "rimraf": "^5.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
@@ -34,7 +33,7 @@
     "webdriverio": "^8.24.7"
   },
   "dependencies": {
-    "fs-extra": "^11.1.1",
+    "fs-extra": "^11.3.2",
     "mssql": "^9.1.1",
     "mysql2": "^3.6.5",
     "play-sound": "^1.1.6",

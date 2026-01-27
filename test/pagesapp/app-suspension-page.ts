@@ -13,7 +13,7 @@ export class SuspensionPage extends PageBase {
     public readonly comboTipoSolicitud = '-android uiautomator:new UiSelector().descriptionContains("Tipo de solicitud")';
     public readonly SeleccionarSuspension = '-android uiautomator:new UiSelector().description("Suspensión Temporal")';
     public readonly SeleccionarFechaIni = '-android uiautomator:new UiSelector().descriptionContains("Inicio de la suspensión")';
-    public readonly SeleccionarDiaIni = '-android uiautomator:new UiSelector().description("25, Tuesday, November 25, 2025")';
+    public readonly SeleccionarDiaIni = '-android uiautomator:new UiSelector().description("26, Wednesday, November 26, 2025")';
     public readonly SeleccionarFlecha = '-android uiautomator:new UiSelector().className("android.widget.Button").instance(3)';
     public readonly SeleccionarFechaFin = '-android uiautomator:new UiSelector().description("30, Tuesday, December 30, 2025")';
     public readonly SeleccionarBtnListo = '-android uiautomator:new UiSelector().description("Listo")';
@@ -140,7 +140,7 @@ export class SuspensionPage extends PageBase {
                 .replace(',', '')       // Quitar la coma
                 .replace(/ am/i, '')    // Quitar am
                 .replace(/ pm/i, '')    // Quitar pm
-                .replace(/\//g, '-')   // Quitar "/"
+                .replace(/\//g, '-')   // Reemplazar "/"
                 .trim();
             console.log("⏰ FECHA Y HORA CONVERTIDA:", fechaHoraRegistro);
             await browser.pause(1000);
