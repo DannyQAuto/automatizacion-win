@@ -1,0 +1,34 @@
+[33mf771726[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/heads/main@{0}: pull origin main: Fast-forward
+[33mf771726[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull origin main: Fast-forward
+[33m3b77968[m HEAD@{1}: reset: moving to HEAD
+[33mf771726[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/remotes/origin/main@{0}: pull origin main: fast-forward
+[33md29c822[m refs/remotes/origin/main@{1}: fetch origin: fast-forward
+[33m3b77968[m HEAD@{2}: reset: moving to origin/main
+[33m3b77968[m refs/heads/main@{1}: pull origin main: Fast-forward
+[33m3b77968[m refs/remotes/origin/main@{2}: pull origin main: fast-forward
+[33m3b77968[m HEAD@{3}: pull origin main: Fast-forward
+[33m0bda670[m refs/heads/main@{2}: reset: moving to origin/main
+[33m0bda670[m HEAD@{4}: reset: moving to origin/main
+[33m0bda670[m refs/remotes/origin/HEAD@{0}: fetch
+[33m0bda670[m refs/remotes/origin/main@{3}: pull origin main: fast-forward
+[33m11338dc[m refs/remotes/origin/main@{4}: update by push
+[33m11338dc[m refs/heads/main@{3}: commit: Initial commit: Proyecto de automatización Windows
+[33m11338dc[m HEAD@{5}: commit: Initial commit: Proyecto de automatización Windows
+[33m38c7552[m refs/heads/main@{4}: commit: Mejora optimizacion
+[33m38c7552[m HEAD@{6}: commit: Mejora optimizacion
+[33m3e8e100[m refs/heads/main@{5}: commit: Optimizacion de winforce y se añadio experiencia y frameservice
+[33m3e8e100[m HEAD@{7}: commit: Optimizacion de winforce y se añadio experiencia y frameservice
+[33m5773d98[m refs/heads/main@{6}: commit: Presentacion
+[33m5773d98[m HEAD@{8}: commit: Presentacion
+[33m92f2f2a[m refs/heads/main@{7}: commit: feat: actualización de tests Winforce y configuración
+[33m92f2f2a[m HEAD@{9}: commit: feat: actualización de tests Winforce y configuración
+[33m61b2a84[m refs/heads/main@{8}: commit: UPDATE
+[33m61b2a84[m HEAD@{10}: commit: UPDATE
+[33me2ee1c0[m refs/heads/main@{9}: commit: chore: add sensitive files to gitignore
+[33me2ee1c0[m HEAD@{11}: commit: chore: add sensitive files to gitignore
+[33m44de3bb[m refs/heads/main@{10}: Branch: renamed refs/heads/main to refs/heads/main
+[33m44de3bb[m HEAD@{12}: Branch: renamed refs/heads/main to refs/heads/main
+[33m44de3bb[m refs/heads/main@{11}: Branch: renamed refs/heads/master to refs/heads/main
+[33m44de3bb[m HEAD@{14}: Branch: renamed refs/heads/master to refs/heads/main
+[33m44de3bb[m refs/heads/main@{12}: commit (initial): Initial commit: Playwright automation project with Winforce tests
+[33m44de3bb[m HEAD@{16}: commit (initial): Initial commit: Playwright automation project with Winforce tests
