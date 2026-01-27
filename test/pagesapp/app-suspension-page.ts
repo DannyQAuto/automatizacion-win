@@ -13,9 +13,15 @@ export class SuspensionPage extends PageBase {
     public readonly comboTipoSolicitud = '-android uiautomator:new UiSelector().descriptionContains("Tipo de solicitud")';
     public readonly SeleccionarSuspension = '-android uiautomator:new UiSelector().description("Suspensión Temporal")';
     public readonly SeleccionarFechaIni = '-android uiautomator:new UiSelector().descriptionContains("Inicio de la suspensión")';
-    public readonly SeleccionarDiaIni = '-android uiautomator:new UiSelector().description("26, Wednesday, November 26, 2025")';
-    public readonly SeleccionarFlecha = '-android uiautomator:new UiSelector().className("android.widget.Button").instance(3)';
-    public readonly SeleccionarFechaFin = '-android uiautomator:new UiSelector().description("30, Tuesday, December 30, 2025")';
+
+    //esto es  public readonly SeleccionarDiaIni = '-android uiautomator:new UiSelector().description("26, Wednesday, November 26, 2025")';
+    public readonly SeleccionarPrimeraFechaDisponible = '-android uiautomator:new UiSelector().className("android.view.View").clickable(true).descriptionMatches(".*[0-9]{1,2},.*[0-9]{4}").instance(0)';
+
+public readonly SeleccionarFlecha = '-android uiautomator:new UiSelector().className("android.widget.Button").instance(3)';
+// fecha fin
+public readonly SeleccionarPrimeraFechaDisponibleFin = '-android uiautomator:new UiSelector().className("android.view.View").clickable(true).descriptionMatches(".*[0-9]{1,2},.*[0-9]{4}").instance(0)';
+   // public readonly SeleccionarFechaFin = '-android uiautomator:new UiSelector().description("30, Tuesday, December 30, 2025")';
+
     public readonly SeleccionarBtnListo = '-android uiautomator:new UiSelector().description("Listo")';
     public readonly comboMotivo = '-android uiautomator:new UiSelector().descriptionContains("Elige")';
     public readonly SeleccionarMotivo = '-android uiautomator:new UiSelector().description("Viaje")';
@@ -52,7 +58,8 @@ export class SuspensionPage extends PageBase {
                         }
                     }
         }
-
+    const diassuspendidosConDias = `${diassuspendidos} días`;
+    const diasdisponiblesConDias = `${diasdisponibles} días`;
         // Actualizar o agregar el código de pedido
         datos.CodigoSolicitud = solicitud;
         datos.FechaHoraRegistro = fechaHoraRegistro;
@@ -60,8 +67,8 @@ export class SuspensionPage extends PageBase {
         datos.Estado = estado;
         datos.FechaInicio = fechainicio;
         datos.FechaFin = fechafinal;
-        datos.DiasSuspendidos = diassuspendidos;
-        datos.DiasDisponibles = diasdisponibles;
+    datos.DiasSuspendidos = diassuspendidosConDias;
+    datos.DiasDisponibles = diasdisponiblesConDias;
 
         await fs.writeJson(this.datosFilePath, datos, { spaces: 2 });
         console.log("✅ Datos guardados correctamente en datos.json");
@@ -101,11 +108,11 @@ export class SuspensionPage extends PageBase {
             await browser.pause(1000);
             await this.click(this.SeleccionarFechaIni);
             await browser.pause(1000);
-            await this.click(this.SeleccionarDiaIni);
+            await this.click(this.SeleccionarPrimeraFechaDisponible);
             await browser.pause(1000);
             await this.click(this.SeleccionarFlecha);
             await browser.pause(1000);
-            await this.click(this.SeleccionarFechaFin);
+            await this.click(this.SeleccionarPrimeraFechaDisponibleFin);
             await browser.pause(1000);
             await this.click(this.SeleccionarBtnListo);
             await browser.pause(1000);

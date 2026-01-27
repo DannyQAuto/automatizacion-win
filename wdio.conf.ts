@@ -22,7 +22,7 @@ platformName: 'Android',
 'appium:noReset': false, // ← CAMBIADO A false para reiniciar la app
 'appium:fullReset': false,
 'appium:newCommandTimeout': 300,
-'appium:avd': 'Emulador',
+'appium:avd': 'mobile_emulator1',
 // NUEVOS PARÁMETROS PARA FORZAR APERTURA:
 'appium:appWaitPackage': 'com.win.miwin_app.dev',
 'appium:appWaitActivity': 'com.win.miwin_app.MainActivity',

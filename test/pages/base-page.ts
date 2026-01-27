@@ -520,8 +520,7 @@ constructor(driver: DriverType, configFile: string = 'config.json') {
 
     private debeGuardarUrl(url: string): boolean {
         const esUrlWinforce = url.includes('10.23.100.19') || url.includes('proy_JC');
-        const esUrlnpx appium --relaxed-security --log-level debug --port 4723
-  = url.includes('10.23.100.24') || url.includes('EXPERIENCIA');
+        const esUrlExperiencia = url.includes('10.23.100.24') || url.includes('EXPERIENCIA');
 
         if (this.environment === 'winforce' && esUrlWinforce) {
             return true;

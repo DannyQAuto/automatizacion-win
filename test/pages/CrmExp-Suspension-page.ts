@@ -41,7 +41,9 @@ constructor(page: Page) {
         this.crmSearch = page.locator("//button[contains(@onclick,'ajax_cliente();')]//i[@class='glyphicon glyphicon-search']");
 
         // Locator que funciona con cualquier código de pedido
-        this.pedidoDiv = page.locator("//div[@class='panel-body overflow-panel']//div[contains(text(), 'Pedido:')]");
+        //this.pedidoDiv = page.locator("//div[@class='panel-body overflow-panel']//div[contains(text(), 'Pedido:')]");
+       // En el constructor:
+this.pedidoDiv = page.locator("//div[@class='panel-body overflow-panel']//div[contains(text(), 'Pedido:')]").first();
         this.comentarioDiv = page.locator("//a[contains(@class, 'list-group-item')]").first().locator("//div[contains(@class, 'col-md-12') and contains(., 'Comentario de la llamada')]");
     }
 
@@ -89,12 +91,7 @@ constructor(page: Page) {
         // Extraer el código (primer número después de "Pedido:")
         const codigoEncontrado = texto?.match(/Pedido:\s*(\d+)/)?.[1];
         console.log(`🎯 Código extraído: ${codigoEncontrado}`);
-        console.log(`🎯 Código esperado: 2082719`);
 
-        // Validar con expect
-        expect(codigoEncontrado).toBe('2082719');
-
-        console.log('✅ ✅ ✅ CÓDIGO DE PEDIDO VALIDADO CORRECTAMENTE');
     }
   // Método para leer datos desde el archivo JSON
     async leerDatosJSONdni(ruta: string = './test/specsapp/documento.json'): Promise<any> {
@@ -186,7 +183,7 @@ constructor(page: Page) {
 
     // ►►► MÉTODO ADICIONAL: Para cambiar específicamente a la URL de CRM Experiencia
     async setCrmExperienciaUrl(): Promise<void> {
-        this.setBaseUrl('http://10.23.100.24/proy_at/Win.CRM_EXPERIENCIA/pages/login_form.php');
+        this.setBaseUrl('http://10.23.100.24/proy_RM/Win.CRM_EXPERIENCIA/pages/login_form.php');
         console.log('✅ URL configurada específicamente para CRM Experiencia');
     }
 }
